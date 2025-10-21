@@ -1,0 +1,36 @@
+# Deno
+deno.lock
+.deno/
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# Test output
+*.test.ts.snap
+
+# Temporary files
+tmp/
+temp/
+*.tmp

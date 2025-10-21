@@ -1,0 +1,16 @@
+# Basic conversion defaults
+# Usage: --defaults=basic.yaml
+
+# Smart typography
+smart: true
+
+# Wrap text at 80 columns for plain text output
+wrap: auto
+
+# Preserve hard line breaks
+preserve-tabs: true
+
+# Enable extensions
+# Uncomment and modify as needed:
+# from: markdown+smart+yaml_metadata_block
+# to: html5

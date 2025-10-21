@@ -1,0 +1,28 @@
+# Academic PDF defaults
+# Usage: --defaults=academic-pdf.yaml
+
+pdf-engine: xelatex
+
+variables:
+  geometry: margin=1in
+  fontsize: 12pt
+  mainfont: "Times New Roman"
+  documentclass: article
+
+# Table of contents
+toc: true
+toc-depth: 3
+
+# Numbered sections
+number-sections: true
+
+# References and citations
+citeproc: true
+
+# Line spacing
+linestretch: 1.5
+
+# Metadata
+metadata:
+  author: "Your Name"
+  date: "\\today"
