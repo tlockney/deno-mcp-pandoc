@@ -10,7 +10,7 @@ export class PandocNotFoundError extends Error {
     super(
       message ||
         "Pandoc not found. Please install Pandoc from https://pandoc.org/installing.html " +
-        "or set the PANDOC_PATH environment variable to the location of the pandoc binary.",
+          "or set the PANDOC_PATH environment variable to the location of the pandoc binary.",
     );
     this.name = "PandocNotFoundError";
   }
@@ -47,7 +47,9 @@ export class ConversionError extends Error {
 export class FilterNotFoundError extends Error {
   constructor(filterName: string, searchPaths: string[]) {
     super(
-      `Filter "${filterName}" not found. Searched in:\n${searchPaths.map((p) => `  - ${p}`).join("\n")}\n\n` +
+      `Filter "${filterName}" not found. Searched in:\n${
+        searchPaths.map((p) => `  - ${p}`).join("\n")
+      }\n\n` +
         "Troubleshooting:\n" +
         "  1. Ensure the filter file exists and is in one of the searched paths\n" +
         "  2. Make sure the filter is executable (chmod +x)\n" +

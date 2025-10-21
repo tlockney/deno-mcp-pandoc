@@ -1,11 +1,16 @@
 # Deno MCP-Pandoc
 
-A Deno/TypeScript implementation of an [MCP](https://modelcontextprotocol.io) server for document conversion using Pandoc.
+A Deno/TypeScript implementation of an [MCP](https://modelcontextprotocol.io) server for document
+conversion using Pandoc.
 
-> **Attribution**: This project is a Deno/TypeScript port inspired by [mcp-pandoc](https://github.com/vivekVells/mcp-pandoc) by [@vivekVells](https://github.com/vivekVells). The original Python implementation provided the foundation and design for this project.
+> **Attribution**: This project is a Deno/TypeScript port inspired by
+> [mcp-pandoc](https://github.com/vivekVells/mcp-pandoc) by
+> [@vivekVells](https://github.com/vivekVells). The original Python implementation provided the
+> foundation and design for this project.
 
 ## Features
 
+- **Dual Transport Modes**: Stdio (for Claude Desktop) and HTTP/SSE (for web applications)
 - **10 Format Support**: markdown, html, txt (plain), ipynb, odt, pdf, docx, rst, latex, epub
 - **Bidirectional Conversion**: Convert between all formats (except PDF as input)
 - **Advanced Features**:
@@ -49,7 +54,11 @@ If Pandoc is not found, install it:
 - **Ubuntu/Debian**: `sudo apt install pandoc`
 - **Windows**: Download from [pandoc.org](https://pandoc.org/installing.html)
 
-## Usage with Claude Desktop
+## Usage
+
+This server supports two transport modes:
+
+### 1. Stdio Transport (for Claude Desktop)
 
 Add to your Claude Desktop configuration file:
 
@@ -72,6 +81,26 @@ Add to your Claude Desktop configuration file:
 ```
 
 Restart Claude Desktop after making changes.
+
+### 2. HTTP Transport (for Web Applications)
+
+Start the HTTP server:
+
+```bash
+# Start with default port (3000)
+deno task start:http
+
+# Or specify custom port and host
+PORT=8080 HOST=0.0.0.0 deno task start:http
+```
+
+The server provides the following endpoints:
+
+- **Health Check**: `GET http://localhost:3000/health`
+- **SSE Endpoint**: `GET http://localhost:3000/sse` (Server-Sent Events for MCP)
+- **Messages**: `POST http://localhost:3000/messages` (MCP message handling)
+
+Configure your web application to connect to the SSE endpoint for MCP communication.
 
 ## MCP Tool: convert-contents
 
@@ -200,6 +229,20 @@ The server automatically resolves filter paths in this order:
 
 ## Development
 
+### Running the Server
+
+```bash
+# Stdio server (for Claude Desktop)
+deno task start
+
+# HTTP server (for web applications)
+deno task start:http
+
+# Development mode with file watching
+deno task dev         # stdio server
+deno task dev:http    # HTTP server
+```
+
 ### Running Tests
 
 ```bash
@@ -231,7 +274,8 @@ deno task check
 ```
 deno-mcp-pandoc/
 ├── src/
-│   ├── server.ts        # MCP server implementation
+│   ├── server.ts        # Stdio MCP server (Claude Desktop)
+│   ├── http-server.ts   # HTTP/SSE MCP server (web apps)
 │   ├── converter.ts     # Pandoc conversion logic
 │   ├── validation.ts    # Input validation
 │   ├── filters.ts       # Filter path resolution
@@ -309,4 +353,5 @@ MIT License - see LICENSE file for details
 
 - Built on [Pandoc](https://pandoc.org/) by John MacFarlane
 - Uses the [Model Context Protocol](https://modelcontextprotocol.io) by Anthropic
-- Inspired by and ported from [mcp-pandoc](https://github.com/vivekVells/mcp-pandoc) by [@vivekVells](https://github.com/vivekVells)
+- Inspired by and ported from [mcp-pandoc](https://github.com/vivekVells/mcp-pandoc) by
+  [@vivekVells](https://github.com/vivekVells)

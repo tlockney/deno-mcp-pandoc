@@ -1,9 +1,11 @@
 /**
- * MCP Server for Pandoc conversions.
+ * HTTP MCP Server for Pandoc conversions.
+ * Uses Streamable HTTP transport for MCP.
  */
 
+import { createServer } from "node:http";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { PandocConverter } from "./converter.ts";
 import { validateConversionParams } from "./validation.ts";
@@ -12,7 +14,7 @@ import { validateDefaultsFile } from "./defaults.ts";
 import { dirname } from "@std/path";
 
 /**
- * Creates and configures the MCP server.
+ * Creates the MCP server instance.
  */
 function createMCPServer(): Server {
   const server = new Server(
@@ -175,16 +177,85 @@ function createMCPServer(): Server {
 }
 
 /**
- * Main entry point.
+ * Main HTTP server entry point.
  */
 async function main() {
-  const server = createMCPServer();
+  const port = parseInt(Deno.env.get("PORT") || "3000");
+  const host = Deno.env.get("HOST") || "localhost";
 
-  // Use stdio transport for MCP
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  // Create a single MCP server instance
+  const mcpServer = createMCPServer();
 
-  console.error("Deno MCP-Pandoc server running on stdio");
+  // Create HTTP server using Node.js compatibility
+  const httpServer = createServer(async (req, res) => {
+    const url = req.url || "/";
+
+    // CORS headers
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, X-Session-Id",
+    };
+
+    // Add CORS headers to all responses
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+
+    // Handle CORS preflight
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    // Health check endpoint
+    if (url === "/health" && req.method === "GET") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          status: "ok",
+          service: "deno-mcp-pandoc",
+          version: "1.0.0",
+        }),
+      );
+      return;
+    }
+
+    // MCP SSE endpoint - handles both SSE streams and direct requests
+    if (url.startsWith("/sse") || url.startsWith("/mcp")) {
+      try {
+        // Create a new transport for this connection
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: undefined, // Stateless mode
+        });
+
+        // Connect the server to this transport
+        await mcpServer.connect(transport);
+
+        // Handle the request
+        await transport.handleRequest(req, res);
+      } catch (error) {
+        console.error("MCP request error:", error);
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Internal server error" }));
+        }
+      }
+      return;
+    }
+
+    // 404 for unknown routes
+    res.writeHead(404);
+    res.end("Not Found");
+  });
+
+  httpServer.listen(port, host, () => {
+    console.log(`🚀 Deno MCP-Pandoc HTTP server running on http://${host}:${port}`);
+    console.log(`   Health check: http://${host}:${port}/health`);
+    console.log(`   SSE endpoint: http://${host}:${port}/sse`);
+    console.log(`   MCP endpoint: http://${host}:${port}/mcp`);
+  });
 }
 
 // Run the server if this is the main module
