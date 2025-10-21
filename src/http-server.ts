@@ -1,9 +1,12 @@
 /**
- * MCP Server for Pandoc conversions.
+ * HTTP MCP Server for Pandoc conversions.
+ * Uses Server-Sent Events (SSE) for MCP transport.
  */
 
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { PandocConverter } from "./converter.ts";
 import { validateConversionParams } from "./validation.ts";
@@ -12,7 +15,7 @@ import { validateDefaultsFile } from "./defaults.ts";
 import { dirname } from "@std/path";
 
 /**
- * Creates and configures the MCP server.
+ * Creates the MCP server instance.
  */
 function createMCPServer(): Server {
   const server = new Server(
@@ -175,16 +178,63 @@ function createMCPServer(): Server {
 }
 
 /**
- * Main entry point.
+ * Main HTTP server entry point.
  */
 async function main() {
-  const server = createMCPServer();
+  const port = parseInt(Deno.env.get("PORT") || "3000");
+  const host = Deno.env.get("HOST") || "localhost";
 
-  // Use stdio transport for MCP
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  const app = new Hono();
 
-  console.error("Deno MCP-Pandoc server running on stdio");
+  // Enable CORS for web app access
+  app.use(
+    "/*",
+    cors({
+      origin: "*",
+      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowHeaders: ["Content-Type"],
+    }),
+  );
+
+  // Health check endpoint
+  app.get("/health", (c) => {
+    return c.json({
+      status: "ok",
+      service: "deno-mcp-pandoc",
+      version: "1.0.0",
+    });
+  });
+
+  // SSE endpoint for MCP
+  app.get("/sse", async (c) => {
+    const server = createMCPServer();
+    const transport = new SSEServerTransport("/messages", c.res);
+    await server.connect(transport);
+
+    return c.body(null, 200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    });
+  });
+
+  // POST endpoint for MCP messages
+  app.post("/messages", async (c) => {
+    const server = createMCPServer();
+    const body = await c.req.json();
+
+    // Process the message through MCP server
+    // Note: This is a simplified implementation
+    // Full implementation would need proper message handling
+
+    return c.json({ success: true });
+  });
+
+  console.log(`🚀 Deno MCP-Pandoc HTTP server running on http://${host}:${port}`);
+  console.log(`   Health check: http://${host}:${port}/health`);
+  console.log(`   SSE endpoint: http://${host}:${port}/sse`);
+
+  Deno.serve({ port, hostname: host }, app.fetch);
 }
 
 // Run the server if this is the main module

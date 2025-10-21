@@ -56,7 +56,10 @@ const FILE_OUTPUT_REQUIRED_FORMATS: readonly PandocFormat[] = [
 /**
  * Validates that a format string is supported.
  */
-export function validateFormat(format: string, allowedFormats: readonly PandocFormat[]): PandocFormat {
+export function validateFormat(
+  format: string,
+  allowedFormats: readonly PandocFormat[],
+): PandocFormat {
   let normalized = format.toLowerCase();
 
   // Map "txt" to "plain" for backward compatibility
