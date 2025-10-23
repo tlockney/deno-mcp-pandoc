@@ -22,6 +22,8 @@ Thumbs.db
 # Build output
 dist/
 build/
+bin/
+artifacts/
 
 # Logs
 *.log
