@@ -11,6 +11,7 @@ conversion using Pandoc.
 ## Features
 
 - **Dual Transport Modes**: Stdio (for Claude Desktop) and HTTP/SSE (for web applications)
+- **Standalone Binary**: Compile to a single executable with `deno compile`
 - **10 Format Support**: markdown, html, txt (plain), ipynb, odt, pdf, docx, rst, latex, epub
 - **Bidirectional Conversion**: Convert between all formats (except PDF as input)
 - **Advanced Features**:
@@ -36,10 +37,25 @@ git clone https://github.com/yourusername/deno-mcp-pandoc.git
 cd deno-mcp-pandoc
 
 # Run directly with Deno
-deno run --allow-all src/server.ts
+deno task start              # Stdio mode (default)
+deno task start:http         # HTTP mode
 
 # Or install globally
-deno install --allow-all -n mcp-pandoc src/server.ts
+deno install --allow-all -n mcp-pandoc src/main.ts
+```
+
+### Compile to Standalone Binary
+
+```bash
+# Compile to a single executable
+deno task compile
+
+# The binary will be created at bin/mcp-pandoc
+./bin/mcp-pandoc              # Stdio mode (default)
+./bin/mcp-pandoc --http       # HTTP mode
+
+# Optionally, copy to a directory in your PATH
+cp bin/mcp-pandoc /usr/local/bin/
 ```
 
 ### Verify Pandoc Installation
@@ -56,7 +72,7 @@ If Pandoc is not found, install it:
 
 ## Usage
 
-This server supports two transport modes:
+The server supports two transport modes via a unified entry point:
 
 ### 1. Stdio Transport (for Claude Desktop)
 
@@ -64,6 +80,8 @@ Add to your Claude Desktop configuration file:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json` **Windows**:
 `%APPDATA%\Claude\claude_desktop_config.json`
+
+Using Deno:
 
 ```json
 {
@@ -73,8 +91,20 @@ Add to your Claude Desktop configuration file:
       "args": [
         "run",
         "--allow-all",
-        "/absolute/path/to/deno-mcp-pandoc/src/server.ts"
+        "/absolute/path/to/deno-mcp-pandoc/src/main.ts"
       ]
+    }
+  }
+}
+```
+
+Or using the compiled binary:
+
+```json
+{
+  "mcpServers": {
+    "pandoc": {
+      "command": "/absolute/path/to/bin/mcp-pandoc"
     }
   }
 }
@@ -87,10 +117,16 @@ Restart Claude Desktop after making changes.
 Start the HTTP server:
 
 ```bash
-# Start with default port (3000)
+# Using Deno tasks
 deno task start:http
 
-# Or specify custom port and host
+# Or run directly
+deno run --allow-all src/main.ts --http
+
+# Or using the compiled binary
+./bin/mcp-pandoc --http
+
+# Specify custom port and host via environment variables
 PORT=8080 HOST=0.0.0.0 deno task start:http
 ```
 
@@ -98,7 +134,7 @@ The server provides the following endpoints:
 
 - **Health Check**: `GET http://localhost:3000/health`
 - **SSE Endpoint**: `GET http://localhost:3000/sse` (Server-Sent Events for MCP)
-- **Messages**: `POST http://localhost:3000/messages` (MCP message handling)
+- **MCP Endpoint**: `GET http://localhost:3000/mcp` (MCP message handling)
 
 Configure your web application to connect to the SSE endpoint for MCP communication.
 
@@ -243,6 +279,18 @@ deno task dev         # stdio server
 deno task dev:http    # HTTP server
 ```
 
+### Building
+
+```bash
+# Compile to standalone binary
+deno task compile
+
+# The binary will be created at bin/mcp-pandoc
+# Run it with:
+./bin/mcp-pandoc              # stdio mode
+./bin/mcp-pandoc --http       # HTTP mode
+```
+
 ### Running Tests
 
 ```bash
@@ -274,13 +322,15 @@ deno task check
 ```
 deno-mcp-pandoc/
 ├── src/
-│   ├── server.ts        # Stdio MCP server (Claude Desktop)
-│   ├── http-server.ts   # HTTP/SSE MCP server (web apps)
+│   ├── main.ts          # Unified entry point with CLI arg parsing
+│   ├── mcp.ts           # Shared MCP server creation logic
 │   ├── converter.ts     # Pandoc conversion logic
 │   ├── validation.ts    # Input validation
 │   ├── filters.ts       # Filter path resolution
 │   ├── defaults.ts      # YAML defaults handling
 │   └── errors.ts        # Custom error types
+├── bin/
+│   └── mcp-pandoc       # Compiled binary (created by deno task compile)
 ├── tests/
 │   ├── unit/           # Unit tests
 │   ├── integration/    # Integration tests (if any)
