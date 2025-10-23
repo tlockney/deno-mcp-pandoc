@@ -395,6 +395,11 @@ Contributions are welcome! Please ensure:
 4. Type checking succeeds: `deno task check`
 5. Test coverage remains above 90%
 
+### Release Process
+
+For maintainers creating releases, see [RELEASING.md](RELEASING.md) for detailed instructions on
+using the automated release process.
+
 ## License
 
 MIT License - see LICENSE file for details
